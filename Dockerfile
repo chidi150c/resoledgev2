@@ -22,7 +22,7 @@ RUN npm run build
 RUN rm -rf src public Dockerfile package*.json node_modules
 
 # Set the working directory for the built application
-WORKDIR /webapp/build
+WORKDIR /build
 
 # Install 'serve' globally
 RUN npm install -g serve
