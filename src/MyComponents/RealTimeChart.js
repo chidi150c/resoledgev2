@@ -25,26 +25,36 @@ const RealTimeChart = () => {
     signal: point.signal,
   }));
 
-  const tickerPriceData = tradingPoints.map(point => ({ x: point.timestamp, y: point.tickerPrice }));
+  const signalsData = tradingPoints
+    .map(point => ({
+      x: point.timestamp,
+      y: point.tickerPrice,
+      signal: point.signal,
+    }));
 
-  // Define chartData using all tradingPoints and tickerPriceData
-  const chartData = {
+  // Define chartData for signals
+  const signalsChartData = {
     datasets: [
       {
-        label: 'Trading Signals',
-        data: tradingPoints.map(point => ({ x: point.timestamp, y: point.tickerPrice })),
-        borderColor: 'purple',   // Color for the scatter points
-        backgroundColor: 'purple', // Color for the scatter points
-        showLine: false,        // Hide line connecting points
-        pointRadius: 5,         // Adjust the point size
-        pointHoverRadius: 7,    // Adjust the point size on hover
-      },
-      {
-        label: 'ticker Price',
-        data: tickerPriceData,
-        borderColor: 'blue',     // Color for the ticker price line
-        fill: false,             // Do not fill the area under the line
-      },
+        label: 'Signals',
+        data: signalsData,
+        backgroundColor: 'red', // Color for the signal points
+        pointRadius: 10, // Adjust the point size
+        pointHoverRadius: 12, // Adjust the point size on hover
+        showLine: false, // Hide line connecting points
+        pointStyle: function(context) {
+          return context.dataset.data[context.dataIndex].signal === 'Buy'
+            ? 'triangle'
+            : context.dataset.data[context.dataIndex].signal === 'Sell'
+            ? 'rect'
+            : 'circle';
+        },
+        {
+          label: 'ticker Price',
+          data: tickerPriceData,
+          borderColor: 'blue',     // Color for the ticker price line
+          fill: false,             // Do not fill the area under the line
+        },
     ],
   };
 
@@ -55,7 +65,7 @@ const RealTimeChart = () => {
   return (
     <div>
       <h2>Real-Time Trading Signals and ticker Price</h2>
-      <Scatter data={chartData} options={chartOptions} />
+      <Scatter data={signalsChartData} options={chartOptions} />
     </div>
   );
 };
