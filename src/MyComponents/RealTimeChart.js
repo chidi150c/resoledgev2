@@ -25,14 +25,13 @@ const RealTimeChart = () => {
     signal: point.signal,
   }));
 
-  const signalsData = tradingPoints
-    .map(point => ({
-      x: point.timestamp,
-      y: point.tickerPrice,
-      signal: point.signal,
-    }));
+  const signalsData = tradingPoints.map(point => ({
+    x: point.timestamp,
+    y: point.tickerPrice,
+    signal: point.signal,
+  }));
 
-  // Define chartData for signals
+  // Define chartData for signals and ticker price
   const signalsChartData = {
     datasets: [
       {
@@ -49,12 +48,13 @@ const RealTimeChart = () => {
             ? 'rect'
             : 'circle';
         },
-        {
-          label: 'ticker Price',
-          data: tickerPriceData,
-          borderColor: 'blue',     // Color for the ticker price line
-          fill: false,             // Do not fill the area under the line
-        },
+      },
+      {
+        label: 'Ticker Price',
+        data: tradingPoints.map(point => ({ x: point.timestamp, y: point.tickerPrice })),
+        borderColor: 'blue', // Color for the ticker price line
+        fill: false, // Do not fill the area under the line
+      },
     ],
   };
 
@@ -64,7 +64,7 @@ const RealTimeChart = () => {
 
   return (
     <div>
-      <h2>Real-Time Trading Signals and ticker Price</h2>
+      <h2>Real-Time Trading Signals and Ticker Price</h2>
       <Scatter data={signalsChartData} options={chartOptions} />
     </div>
   );
