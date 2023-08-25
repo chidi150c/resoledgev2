@@ -1,24 +1,21 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Scatter, Line } from 'react-chartjs-2'; // Keep the import of 'Line'
-import { connectWebSocket } from './websocket'; // Your WebSocket utility
+import React, { useState, useEffect } from 'react';
+import { connectWebSocket } from './websocket';
 
 const RealTimeChart = () => {
-  const dispatch = useDispatch();
-  const tradingData = useSelector(state => state.tradingData);
+  const [tradingData, setTradingData] = useState([]);
 
   useEffect(() => {
-    const socket = connectWebSocket(); // Establish WebSocket connection
+    const socket = connectWebSocket();
 
     socket.onmessage = event => {
       const newTradingPoint = JSON.parse(event.data);
-      dispatch({ type: 'ADD_TRADING_POINT', payload: newTradingPoint });
+      setTradingData(prevData => [...prevData, newTradingPoint]);
     };
 
     return () => {
-      socket.close(); // Close WebSocket connection when component unmounts
+      socket.close();
     };
-  }, [dispatch]);
+  }, []);
 
   // Extract data for the chart
   const tradingPoints = tradingData.map(point => ({
