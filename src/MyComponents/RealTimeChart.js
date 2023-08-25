@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { connectWebSocket } from './websocket';
 import { Scatter } from 'react-chartjs-2'; // Import Scatter from react-chartjs-2
+import { Chart } from 'chart.js'; // Import Chart from chart.js library
+import { LinearScale } from 'chart.js'; // Import LinearScale from chart.js
+
+Chart.register(LinearScale); // Register the LinearScale globally
 
 const RealTimeChart = () => {
   const [tradingData, setTradingData] = useState([]);
