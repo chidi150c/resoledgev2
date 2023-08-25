@@ -1,5 +1,5 @@
 import React from 'react';
-import './App.css';
+import '../App';
 import { Carousel } from 'react-responsive-carousel';
 
 function Jumbo() {

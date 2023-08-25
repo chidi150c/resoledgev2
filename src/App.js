@@ -1,10 +1,16 @@
 import React from 'react';
 import './App.css';
-import Header from './Header';
-import Jumbo from './Jumbo';
-import Footer from './Footer';
-import Ourskills from './Ourskills';
+import Header from './MyComponents/Header';
+import Jumbo from './MyComponents/Jumbo';
+import Footer from './MyComponents/Footer';
+import Ourskills from './MyComponents/Ourskills';
 import { Link } from 'react-router-dom';
+import Server1image from './Assets/SERVER1.jpg';
+import vsatImage from './Assets/VSAT1.avif';
+import Server2image from './Assets/monitor.jpg';
+
+
+
 
 function App() {
   return (
@@ -25,10 +31,10 @@ function App() {
       {/* Into Pics*/}
       <div className="w3-row">
         <div className="w3-half w3-container">
-          <img src="/SERVER1.jpg" style={{width: '100%' }} alt="house" />
+          <img src={Server1image} style={{width: '100%' }} alt="house" />
         </div>
         <div className="w3-half w3-container">
-          <img src="/SERVER2.jpg" style={{width: '100%' }} alt="house" />
+          <img src={Server2image} style={{width: '100%' }} alt="house" />
         </div>
       </div>
       {/* Promo Section - "About US" */}
@@ -39,7 +45,7 @@ function App() {
           <p><Link to="/academy" className="w3-button w3-black"><i className="fa fa-th"> </i> View Our Works</Link></p>
         </div>
         <div className="w3-col m4 w3-container w3-panel">
-          <img src="/VSAT1.avif" alt="Buildings" width="100%" height="494" />
+          <img src={vsatImage} alt="Buildings" width="100%" height="494" />
         </div>
       </div>  
       <Ourskills />
