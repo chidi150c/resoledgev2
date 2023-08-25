@@ -46,11 +46,8 @@ const RealTimeChart = () => {
         pointHoverRadius: 12, // Adjust the point size on hover
         showLine: false, // Hide line connecting points
         pointStyle: function(context) {
-          return context.dataset.data[context.dataIndex].signal === 'Buy'
-            ? 'triangle'
-            : context.dataset.data[context.dataIndex].signal === 'Sell'
-            ? 'rect'
-            : 'circle';
+          const signal = context.dataset.data[context.dataIndex].signal;
+          return signal === 'Buy' ? 'triangle' : signal === 'Sell' ? 'rect' : 'circle';
         },
       },
       {
