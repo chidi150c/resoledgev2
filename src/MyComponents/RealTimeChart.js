@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { connectWebSocket } from './websocket';
+import { Scatter } from 'react-chartjs-2'; // Import Scatter from react-chartjs-2
 
 const RealTimeChart = () => {
   const [tradingData, setTradingData] = useState([]);
