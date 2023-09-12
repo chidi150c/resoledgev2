@@ -1,74 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { connectWebSocket } from './websocket';
-import { Scatter } from 'react-chartjs-2'; // Import Scatter from react-chartjs-2
-import { Chart } from 'chart.js'; // Import Chart from chart.js library
-import { LinearScale } from 'chart.js'; // Import LinearScale from chart.js
+import React, { Component } from "react";
+import {
+  LineChart,  // Make sure LineChart is used
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Scatter,
+  ScatterChart,
+  ReferenceDot,
+} from "recharts";
+import * as WebSocket from "websocket";
 
-Chart.register(LinearScale); // Register the LinearScale globally
 
-const RealTimeChart = () => {
-  const [tradingData, setTradingData] = useState([]);
+class RealTimeChart extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      chartData: [],  // Initialize with an empty array
+      buySignalData: [],
+      sellSignalData: [],
+    };
+    this.socket = new WebSocket.w3cwebsocket("ws://localhost:35260/margins/ws");
+  }
 
-  useEffect(() => {
-    const socket = connectWebSocket();
-
-    socket.onmessage = event => {
-      const newTradingPoint = JSON.parse(event.data);
-      setTradingData(prevData => [...prevData, newTradingPoint]);
+  componentDidMount() {
+    this.socket.onopen = () => {
+      console.log("WebSocket connected");
     };
 
-    return () => {
-      socket.close();
+    this.socket.onmessage = (event) => {
+      const newData = JSON.parse(event.data);
+      // Update chartData by appending new data and keeping only the last 500 points
+      const updatedChartData = [
+        ...this.state.chartData.slice(-499),  // Keep the last 499 points
+        newData,  // Add the new data point
+      ];
+
+      this.setState({
+        chartData: updatedChartData,
+      });
+
+      if (newData.Signals === "Buy") {
+        const buySignalPoints = [...this.state.buySignalData, newData];
+        if (buySignalPoints.length > 500) {
+          buySignalPoints.shift();
+        }
+
+        this.setState({
+          buySignalData: buySignalPoints,
+        });
+
+      } else if (newData.Signals === "Sell") {
+        const sellSignalPoints = [...this.state.sellSignalData, newData];
+        if (sellSignalPoints.length > 500) {
+          sellSignalPoints.shift();
+        }
+
+        this.setState({
+          sellSignalData: sellSignalPoints,
+        });
+      }
     };
-  }, []);
 
-  // Extract data for the chart
-  const tradingPoints = tradingData.map(point => ({
-    timestamp: point.timestamp,
-    tickerPrice: point.tickerPrice,
-    signal: point.signal,
-  }));
+    this.socket.onclose = () => {
+      console.log("WebSocket closed");
+    };
+  }
 
-  const signalsData = tradingPoints.map(point => ({
-    x: point.timestamp,
-    y: point.tickerPrice,
-    signal: point.signal,
-  }));
+  componentWillUnmount() {
+    if (this.socket.readyState === WebSocket.OPEN) {
+      this.socket.close();
+    }
+  }
+  render() {
+    // console.log("ChartData:", this.state.sellSignalData); // Log chart data
 
-  // Define chartData for signals and ticker price
-  const signalsChartData = {
-    datasets: [
-      {
-        label: 'Signals',
-        data: signalsData,
-        backgroundColor: 'red', // Color for the signal points
-        pointRadius: 10, // Adjust the point size
-        pointHoverRadius: 12, // Adjust the point size on hover
-        showLine: false, // Hide line connecting points
-        pointStyle: function(context) {
-          const signal = context.dataset.data[context.dataIndex].signal;
-          return signal === 'Buy' ? 'triangle' : signal === 'Sell' ? 'rect' : 'circle';
-        },
-      },
-      {
-        label: 'Ticker Price',
-        data: tradingPoints.map(point => ({ x: point.timestamp, y: point.tickerPrice })),
-        borderColor: 'blue', // Color for the ticker price line
-        fill: false, // Do not fill the area under the line
-      },
-    ],
-  };
-
-  const chartOptions = {
-    // Customize chart options as needed
-  };
-
-  return (
-    <div>
-      <h2>Real-Time Trading Signals and Ticker Price</h2>
-      <Scatter data={signalsChartData} options={chartOptions} />
-    </div>
-  );
-};
+    return (
+      <div className="rtc">
+        <h2><b>My Automatic Cryptocurrency Dashboard</b></h2>
+        <h2>Combined Scatter and Line Chart</h2>
+        <LineChart
+          width={800}
+          height={400}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          data={this.state.chartData}  // Use the updated chartData
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="Timestamps" type="number" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="ClosingPrices"
+            stroke="#8884d8"
+            name="Closing Prices"
+          />
+          <Line
+            type="monotone"
+            dataKey="ShortEMA"
+            stroke="#82ca9d"
+            name="Short EMA"
+          />
+          <Line
+            type="monotone"
+            dataKey="LongEMA"
+            stroke="#ffc658"
+            name="Long EMA"
+          />
+          
+          {/* Use ScatterChart */}
+          <ScatterChart 
+            width={800}
+            height={400}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="Timestamps" type="number" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Scatter name="Buy Signals" data={this.state.buySignalData} fill="red">
+              {/* ReferenceDots for Buy Signals */}
+              {this.state.buySignalData.map((entry, index) => (
+                <ReferenceDot
+                  key={index}
+                  x={entry.Timestamps}
+                  y={entry.ClosingPrices}
+                  r={55}
+                  fill="red"
+                  isFront={true}
+                />
+              ))}
+            </Scatter>
+            <Scatter name="Sell Signals" data={this.state.sellSignalData} fill="blue">
+              {/* ReferenceDots for Sell Signals */}
+              {this.state.sellSignalData.map((entry, index) => (
+                <ReferenceDot
+                  key={index}
+                  x={entry.Timestamps}
+                  y={entry.ClosingPrices}
+                  r={5}
+                  fill="blue"
+                  isFront={true}
+                />
+              ))}
+            </Scatter>
+          </ScatterChart>
+          </LineChart>
+      </div>
+    );
+  }
+}
 
 export default RealTimeChart;

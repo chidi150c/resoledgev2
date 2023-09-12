@@ -1,6 +1,6 @@
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from "react-dom/client";
 import AppRouter from './MyComponents/AppRouter';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
@@ -11,10 +11,14 @@ import 'react-responsive-carousel/lib/styles/carousel.min.css';
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
 
-
-ReactDOM.render(
+const root = document.getElementById("root");
+const app = (
   <React.StrictMode>
     <AppRouter />
-  </React.StrictMode>,
-  document.getElementById('root')
+  </React.StrictMode>
 );
+
+// Use createRoot to render the app
+const rootElement = createRoot(root);
+rootElement.render(app);
+
