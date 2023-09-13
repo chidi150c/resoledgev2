@@ -22,7 +22,7 @@ class ImageReceiver extends Component {
     this.trader = new WebSocket.w3cwebsocket("ws://my-golang-app:35260/FeedsTradingSystem/ws"); //176.58.125.70  my-golang-app
     this.appdata = new WebSocket.w3cwebsocket("ws://my-golang-app:35260/FeedsAppData/ws"); //176.58.125.70  my-golang-app
   }
-
+ 
   componentDidMount() {
     this.socket.onopen = () => {
       console.log("WebSocket connected for Chart Image");
