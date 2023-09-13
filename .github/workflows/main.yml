@@ -1,4 +1,4 @@
-name: Node.js App Deployment
+name: Deploy to DigitalOcean
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,29 +17,22 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 14
-
-      - name: Install Docker CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install docker.io
-
-      - name: Build Docker image
-        run: |
-          # Build the Docker image using the provided Dockerfile
-          docker build -t my-nodejs-app -f Dockerfile .
           
-          # Log in to Docker Hub
-          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: Update npm
+        run: npm install -g npm@latest
 
-          # Push the Docker image to Docker Hub
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }}
+      - name: Docker Login
+        run: |
+          docker logout
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
-          # Remove the old Docker image
-          docker rmi ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:old || true
-          
-          # Tag the latest image as "old"
-          docker tag ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:old
-
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./
+          push: true
+          tags: chidi150c/node20webapp:${{ github.sha }}
+           
       - name: Deploy to DigitalOcean
         uses: appleboy/ssh-action@master
         with:
@@ -49,15 +42,21 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key_type: rsa
           script: |
-            # Pull the latest Docker image from Docker Hub
-            docker pull ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }}
-            
-            # Stop and remove any existing container with the same name (if it exists)
-            docker stop my-nodejs-app || true
-            docker rm my-nodejs-app || true
-            
-            # Run the Docker container with port mapping
-            docker run -d -p 35259:35259 --name my-nodejs-app ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }}
-            
-            # Restart your web server (e.g., Nginx)
+            docker logout
+            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            docker stop $(docker ps -q -f name=node20webap) || true
+            docker rm $(docker ps -aq -f name=node20webap) || true
+            docker rmi $(docker images -q chidi150c/node20webapp) || true
+            docker pull chidi150c/node20webapp:${{ github.sha }}
+            docker run -d --restart=always --network my-network -p 35259:35259 --name node20webap chidi150c/node20webapp:${{ github.sha }}
+                      
+      - name: Restart web server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          key_type: rsa
+          script: |
             sudo systemctl restart nginx
