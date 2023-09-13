@@ -21,6 +21,9 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
 
+      - name: Ensure Deployment Directory Exists
+        run: mkdir -p /tmp/my-react
+
       - name: Remove Old Deployment in DigitalOcean
         uses: appleboy/ssh-action@master
         with:
