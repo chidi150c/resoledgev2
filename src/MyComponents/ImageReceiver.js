@@ -18,9 +18,9 @@ class ImageReceiver extends Component {
     },
       appData: {},
     };
-    this.socket = new WebSocket.w3cwebsocket("ws://my-golang-app:35260/ImageReceiver/ws"); //176.58.125.70  my-golang-app
-    this.trader = new WebSocket.w3cwebsocket("ws://my-golang-app:35260/FeedsTradingSystem/ws"); //176.58.125.70  my-golang-app
-    this.appdata = new WebSocket.w3cwebsocket("ws://my-golang-app:35260/FeedsAppData/ws"); //176.58.125.70  my-golang-app
+    this.socket = new WebSocket.w3cwebsocket("ws://176.58.125.70:35261/ImageReceiver/ws"); //176.58.125.70  my-golang-app
+    this.trader = new WebSocket.w3cwebsocket("ws://176.58.125.70:35261/FeedsTradingSystem/ws"); //176.58.125.70  my-golang-app
+    this.appdata = new WebSocket.w3cwebsocket("ws://176.58.125.70:35261/FeedsAppData/ws"); //176.58.125.70  my-golang-app
   }
  
   componentDidMount() {
