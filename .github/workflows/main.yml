@@ -20,18 +20,42 @@ jobs:
           
       - name: Update npm
         run: npm install -g npm@latest
-
-      - name: Docker Login
-        run: |
-          docker logout
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+        
+      - name: Remove Old Deployment in DigitalOcean 
+        uses: appleboy/ssh-action@master
         with:
-          context: ./
-          push: true
-          tags: chidi150c/node20webapp:${{ github.sha }}
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          key_type: rsa
+          script: |
+            set -e
+            cd /tmp/my-react
+            echo "Current directory: $(pwd)"
+            ls -la
+            rm -rf * 
+
+      - name: Copy Application Files to Target System
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: './*'
+          target: /tmp/my-react
+
+      - name: Build Docker Image
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          key_type: rsa
+          script: |
+            cd /tmp/my-react
            
       - name: Deploy to DigitalOcean
         uses: appleboy/ssh-action@master
@@ -42,13 +66,11 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key_type: rsa
           script: |
-            docker logout
-            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
             docker stop $(docker ps -q -f name=node20webap) || true
             docker rm $(docker ps -aq -f name=node20webap) || true
             docker rmi $(docker images -q chidi150c/node20webapp) || true
-            docker pull chidi150c/node20webapp:${{ github.sha }}
-            docker run -d --restart=always --network my-network -p 35260:35260 --name node20webap chidi150c/node20webapp:${{ github.sha }}
+            docker build node20webap .
+            docker run -d --restart=always --network my-network -p 35259:35259 --name node20webap chidi150c/node20webapp:${{ github.sha }}
                       
       - name: Restart web server
         uses: appleboy/ssh-action@master
