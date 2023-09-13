@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean
+name: Node.js App Deployment
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,41 +18,27 @@ jobs:
         with:
           node-version: 14
 
-      - name: Update npm
-        run: npm install -g npm@latest
-
-      - name: Ensure Deployment Directory Exists
-        run: mkdir -p /tmp/my-react
-
-      - name: Remove Old Deployment in DigitalOcean
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          key_type: rsa
-          script: |
-            set -e
-            cd /tmp/my-react
-            echo "Current directory: $(pwd)"
-            ls -la
-            rm -rf *
-
-      - name: Copy Application Files to Target System
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: ./
-          target: /tmp/my-react
-
-      - name: Build Docker Image
+      - name: Install Docker CLI
         run: |
-          cd /tmp/my-react
-          docker build -t my-react-app .
+          sudo apt-get update
+          sudo apt-get -y install docker.io
+
+      - name: Build Docker image
+        run: |
+          # Build the Docker image using the provided Dockerfile
+          docker build -t my-nodejs-app -f Dockerfile .
+          
+          # Log in to Docker Hub
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+          # Push the Docker image to Docker Hub
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }}
+
+          # Remove the old Docker image
+          docker rmi ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:old || true
+          
+          # Tag the latest image as "old"
+          docker tag ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:old
 
       - name: Deploy to DigitalOcean
         uses: appleboy/ssh-action@master
@@ -63,18 +49,15 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key_type: rsa
           script: |
-            docker stop my-react-app || true
-            docker rm my-react-app || true
-            docker rmi my-react-app || true
-            docker run -d --restart=always --network my-network -p 35259:35259 --name my-react-app my-react-app
-
-      - name: Restart web server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          key_type: rsa
-          script: |
+            # Pull the latest Docker image from Docker Hub
+            docker pull ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }}
+            
+            # Stop and remove any existing container with the same name (if it exists)
+            docker stop my-nodejs-app || true
+            docker rm my-nodejs-app || true
+            
+            # Run the Docker container with port mapping
+            docker run -d -p 35259:35259 --name my-nodejs-app ${{ secrets.DOCKER_USERNAME }}/my-nodejs-app:${{ github.sha }}
+            
+            # Restart your web server (e.g., Nginx)
             sudo systemctl restart nginx
