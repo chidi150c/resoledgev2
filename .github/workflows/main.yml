@@ -66,11 +66,11 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key_type: rsa
           script: |
-            docker stop $(docker ps -q -f name=node20webap) || true
-            docker rm $(docker ps -aq -f name=node20webap) || true
-            docker rmi $(docker images -q chidi150c/node20webapp) || true
-            docker build node20webap .
-            docker run -d --restart=always --network my-network -p 35259:35259 --name node20webap chidi150c/node20webapp:${{ github.sha }}
+            docker stop $(docker ps -q -f name=my-react-app) || true
+            docker rm $(docker ps -aq -f name=my-react-app) || true
+            docker rmi $(docker images -q my-react-appp) || true
+            docker build my-react-app .
+            docker run -d --restart=always --network my-network -p 35259:35259 --name my-react-app 
                       
       - name: Restart web server
         uses: appleboy/ssh-action@master
